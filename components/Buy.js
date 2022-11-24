@@ -97,7 +97,7 @@ export default function Buy({ itemID }) {
   return (
     <div>
       { status === STATUS.Paid ? (
-        <IPFSDownload filename="emojis.zip" hash="QmWWH69mTL66r3H8P4wUn24t1L5pvdTJGUTKBqT11KCHS5" cta="Download emojis"/>
+        <IPFSDownload filename="moonphases.jpeg" hash="QmVA6bd5ZUpSArQFpupsTCzPdMBUZRaTtFLCyjgUsbnuEL" cta="Download background"/>
       ) : (
         <button disabled={loading} className="buy-button" onClick={processTransaction}>
           Buy now 🠚
