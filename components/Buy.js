@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Keypair, Transaction } from "@solana/web3.js";
-import { findReference, FindReferenceError } from "@solana/pay";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { InfinitySpin } from "react-loader-spinner";
-import IPFSDownload from "./IpfsDownload";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Keypair, Transaction } from '@solana/web3.js';
+import { findReference, FindReferenceError } from '@solana/pay';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { InfinitySpin } from 'react-loader-spinner';
+import IPFSDownload from './IpfsDownload';
+import { addOrder } from '../lib/api';
 
 const STATUS = {
-  Initial: "Initial",
-  Submitted: "Submitted",
-  Paid: "Paid",
+  Initial: 'Initial',
+  Submitted: 'Submitted',
+  Paid: 'Paid',
 };
 
 export default function Buy({ itemID }) {
@@ -16,7 +17,7 @@ export default function Buy({ itemID }) {
   const { publicKey, sendTransaction } = useWallet();
   const orderID = useMemo(() => Keypair.generate().publicKey, []); // Public key used to identify the order
 
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(STATUS.Initial); // Tracking transaction status
 
   const order = useMemo(
@@ -30,21 +31,23 @@ export default function Buy({ itemID }) {
 
   const processTransaction = async () => {
     setLoading(true);
-    const txResponse = await fetch("../api/createTransaction", {
-      method: "POST",
+    const txResponse = await fetch('../api/createTransaction', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(order),
     });
     const txData = await txResponse.json();
 
-    const tx = Transaction.from(Buffer.from(txData.transaction, "base64"));
-    console.log("Tx data is", tx);
+    const tx = Transaction.from(Buffer.from(txData.transaction, 'base64'));
+    console.log('Tx data is', tx);
 
     try {
       const txHash = await sendTransaction(tx, connection);
-      console.log(`Transaction sent: https://solscan.io/tx/${txHash}?cluster=devnet`);
+      console.log(
+        `Transaction sent: https://solscan.io/tx/${txHash}?cluster=devnet`
+      );
       setStatus(STATUS.Submitted);
     } catch (error) {
       console.error(error);
@@ -52,7 +55,7 @@ export default function Buy({ itemID }) {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     // Check if transaction was confirmed
     if (status === STATUS.Submitted) {
@@ -60,18 +63,22 @@ export default function Buy({ itemID }) {
       const interval = setInterval(async () => {
         try {
           const result = await findReference(connection, orderID);
-          console.log("Finding tx reference", result.confirmationStatus);
-          if (result.confirmationStatus === "confirmed" || result.confirmationStatus === "finalized") {
+          console.log('Finding tx reference', result.confirmationStatus);
+          if (
+            result.confirmationStatus === 'confirmed' ||
+            result.confirmationStatus === 'finalized'
+          ) {
             clearInterval(interval);
             setStatus(STATUS.Paid);
             setLoading(false);
-            alert("Thank you for your purchase!");
+            addOrder(order);
+            alert('Thank you for your purchase!');
           }
         } catch (e) {
           if (e instanceof FindReferenceError) {
             return null;
           }
-          console.error("Unknown error", e);
+          console.error('Unknown error', e);
         } finally {
           setLoading(false);
         }
@@ -96,10 +103,18 @@ export default function Buy({ itemID }) {
 
   return (
     <div>
-      { status === STATUS.Paid ? (
-        <IPFSDownload filename="moonphases.jpeg" hash="QmVA6bd5ZUpSArQFpupsTCzPdMBUZRaTtFLCyjgUsbnuEL" cta="Download background"/>
+      {status === STATUS.Paid ? (
+        <IPFSDownload
+          filename="moonphases.jpeg"
+          hash="QmVA6bd5ZUpSArQFpupsTCzPdMBUZRaTtFLCyjgUsbnuEL"
+          cta="Download background"
+        />
       ) : (
-        <button disabled={loading} className="buy-button" onClick={processTransaction}>
+        <button
+          disabled={loading}
+          className="buy-button"
+          onClick={processTransaction}
+        >
           Buy now 🠚
         </button>
       )}
